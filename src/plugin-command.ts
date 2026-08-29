@@ -61,7 +61,7 @@ export function registerPluginCommand(
 			}
 			await withPluginLoadingFeedback(
 				ctx,
-				"Loading Agent Plugins...",
+				"Loading Agent Plugin...",
 				async () => {
 					runtime.scan(ctx.cwd, ctx.isProjectTrusted());
 					await handler(rest.join(" "), ctx);

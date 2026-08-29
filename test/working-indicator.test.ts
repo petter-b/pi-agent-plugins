@@ -25,7 +25,7 @@ test("plugin loading feedback yields after displaying a loader, then clears it",
 	const calls: string[] = [];
 	const feedback = withPluginLoadingFeedback(
 		testContext("tui", calls),
-		"Loading Agent Plugins...",
+		"Loading Agent Plugin...",
 		() => {
 			calls.push("work");
 			return "loaded";
@@ -48,7 +48,7 @@ test("plugin loading feedback clears its loader when work fails", async () => {
 	await assert.rejects(
 		withPluginLoadingFeedback(
 			testContext("tui", calls),
-			"Loading Agent Plugins...",
+			"Loading Agent Plugin...",
 			() => {
 				calls.push("work");
 				throw new Error("plugin scan failed");
@@ -64,7 +64,7 @@ test("plugin loading feedback does not create TUI widgets in print or RPC mode",
 		const calls: string[] = [];
 		await withPluginLoadingFeedback(
 			testContext(mode, calls),
-			"Loading Agent Plugins...",
+			"Loading Agent Plugin...",
 			() => calls.push("work"),
 		);
 		assert.deepEqual(calls, ["work"]);

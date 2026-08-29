@@ -22,13 +22,13 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 	}
 
 	pi.on("resources_discover", async (event, ctx) =>
-		withPluginLoadingFeedback(ctx, "Loading Agent Plugins...", () =>
+		withPluginLoadingFeedback(ctx, "Loading Agent Plugin...", () =>
 			runtime.discoverResources(event.cwd),
 		),
 	);
 
 	pi.on("session_start", async (_event, ctx) => {
-		await withPluginLoadingFeedback(ctx, "Loading Agent Plugins...", () => {
+		await withPluginLoadingFeedback(ctx, "Loading Agent Plugin...", () => {
 			runtime.startSession(ctx.cwd, ctx.isProjectTrusted());
 			const errors = runtime
 				.allDiagnostics()
