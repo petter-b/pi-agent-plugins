@@ -21,7 +21,10 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 	}
 
 	pi.on("resources_discover", (event, ctx) => {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		if (ctx.hasUI) {
+			ctx.ui.setWorkingVisible(true);
+			ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		}
 		try {
 			runtime.discoverResources(event.cwd);
 		} finally {
@@ -30,7 +33,10 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		if (ctx.hasUI) {
+			ctx.ui.setWorkingVisible(true);
+			ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		}
 		try {
 			runtime.startSession(ctx.cwd, ctx.isProjectTrusted());
 			const errors = runtime

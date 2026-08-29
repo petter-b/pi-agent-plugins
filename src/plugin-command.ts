@@ -58,7 +58,10 @@ export function registerPluginCommand(
 				);
 				return;
 			}
-			if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+			if (ctx.hasUI) {
+				ctx.ui.setWorkingVisible(true);
+				ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+			}
 			try {
 				runtime.scan(ctx.cwd, ctx.isProjectTrusted());
 				await handler(rest.join(" "), ctx);
@@ -156,7 +159,10 @@ async function handleInstall(
 	}
 
 	try {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage("Installing plugin...");
+		if (ctx.hasUI) {
+			ctx.ui.setWorkingVisible(true);
+			ctx.ui.setWorkingMessage("Installing plugin...");
+		}
 		const options = ctx.signal ? { signal: ctx.signal } : {};
 		const result = await install(source, options);
 		runtime.scan();
@@ -189,7 +195,10 @@ async function handleUninstall(
 		return;
 	}
 
-	if (ctx.hasUI) ctx.ui.setWorkingMessage("Uninstalling plugin...");
+	if (ctx.hasUI) {
+		ctx.ui.setWorkingVisible(true);
+		ctx.ui.setWorkingMessage("Uninstalling plugin...");
+	}
 	try {
 		const removed = uninstall(plugin.manifest.name);
 		runtime.scan();
@@ -239,7 +248,10 @@ async function handleReload(
 	runtime: PluginRuntime,
 	ctx: ExtensionCommandContext,
 ): Promise<void> {
-	if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+	if (ctx.hasUI) {
+		ctx.ui.setWorkingVisible(true);
+		ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+	}
 	try {
 		const { diagnostics } = runtime.sync();
 		const errors = diagnostics.filter(
