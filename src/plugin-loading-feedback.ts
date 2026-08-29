@@ -7,6 +7,7 @@ import type {
 import { Loader } from "@earendil-works/pi-tui";
 
 const PLUGIN_LOADING_WIDGET_KEY = "agent-plugins-loading";
+const PLUGIN_LOADING_RENDER_DELAY_MS = 20;
 
 type PluginLoadingFeedbackContext = Pick<ExtensionContext, "mode"> & {
 	ui: Pick<ExtensionUIContext, "setWidget">;
@@ -43,7 +44,11 @@ export async function withPluginLoadingFeedback<T>(
 		),
 	);
 	try {
-		await new Promise<void>((resolve) => setImmediate(resolve));
+		// Pi TUI throttles ordinary renders through a 16 ms timer. A macrotask
+		// alone can resume before that timer fires, so wait for one render interval.
+		await new Promise<void>((resolve) =>
+			setTimeout(resolve, PLUGIN_LOADING_RENDER_DELAY_MS),
+		);
 		return await work();
 	} finally {
 		ctx.ui.setWidget(PLUGIN_LOADING_WIDGET_KEY, undefined);

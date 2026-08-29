@@ -33,10 +33,10 @@ test("plugin loading feedback yields after displaying a loader, then clears it",
 	);
 
 	await new Promise<void>((resolve) =>
-		process.nextTick(() => {
+		setTimeout(() => {
 			calls.push("render");
 			resolve();
-		}),
+		}, 0),
 	);
 	assert.deepEqual(calls, ["show", "render"]);
 	assert.equal(await feedback, "loaded");
