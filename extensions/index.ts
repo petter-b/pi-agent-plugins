@@ -21,21 +21,26 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 	}
 
 	pi.on("resources_discover", (event, ctx) => {
+		console.error("[Agent Plugins] resources_discover fired, hasUI=", ctx.hasUI);
 		if (ctx.hasUI) {
 			ctx.ui.setWorkingVisible(true);
 			ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+			console.error("[Agent Plugins] setWorkingMessage called");
 		}
 		try {
 			runtime.discoverResources(event.cwd);
 		} finally {
 			if (ctx.hasUI) ctx.ui.setWorkingMessage();
+			console.error("[Agent Plugins] resources_discover complete");
 		}
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
+		console.error("[Agent Plugins] session_start fired, hasUI=", ctx.hasUI);
 		if (ctx.hasUI) {
 			ctx.ui.setWorkingVisible(true);
 			ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+			console.error("[Agent Plugins] setWorkingMessage called");
 		}
 		try {
 			runtime.startSession(ctx.cwd, ctx.isProjectTrusted());
@@ -51,6 +56,7 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 			await promptForTrust(runtime, ctx);
 		} finally {
 			if (ctx.hasUI) ctx.ui.setWorkingMessage();
+			console.error("[Agent Plugins] session_start complete");
 		}
 	});
 
