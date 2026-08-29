@@ -20,20 +20,32 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 		// session_start rescans and reports diagnostics with UI context.
 	}
 
-	pi.on("resources_discover", (event) => runtime.discoverResources(event.cwd));
+	pi.on("resources_discover", (event, ctx) => {
+		if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		try {
+			runtime.discoverResources(event.cwd);
+		} finally {
+			if (ctx.hasUI) ctx.ui.setWorkingMessage();
+		}
+	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		runtime.startSession(ctx.cwd, ctx.isProjectTrusted());
-		const errors = runtime
-			.allDiagnostics()
-			.filter((diagnostic) => diagnostic.severity === "error");
-		if (errors.length > 0 && ctx.hasUI) {
-			ctx.ui.notify(
-				`Agent Plugins: ${errors.length} problem(s). Run /plugin list for detail.`,
-				"warning",
-			);
+		if (ctx.hasUI) ctx.ui.setWorkingMessage("Loading Agent Plugins...");
+		try {
+			runtime.startSession(ctx.cwd, ctx.isProjectTrusted());
+			const errors = runtime
+				.allDiagnostics()
+				.filter((diagnostic) => diagnostic.severity === "error");
+			if (errors.length > 0 && ctx.hasUI) {
+				ctx.ui.notify(
+					`Agent Plugins: ${errors.length} problem(s). Run /plugin list for detail.`,
+					"warning",
+				);
+			}
+			await promptForTrust(runtime, ctx);
+		} finally {
+			if (ctx.hasUI) ctx.ui.setWorkingMessage();
 		}
-		await promptForTrust(runtime, ctx);
 	});
 
 	registerPluginCommand(pi, runtime);
