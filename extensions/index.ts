@@ -1,9 +1,6 @@
 /** Agent Plugins 1.0.0 client extension for Pi. */
 
-import type {
-	ExtensionAPI,
-	ExtensionContext,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 
 import { registerPluginCommand } from "../src/plugin-command.ts";
@@ -53,7 +50,17 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 					"warning",
 				);
 			}
-			await promptForTrust(runtime, ctx);
+			// Don't block session_start with trust prompts - defer to a fire-and-forget
+			if (ctx.hasUI) {
+				// Show notification if there are pending trust decisions
+				const pending = runtime.pendingTrust();
+				if (pending.length > 0) {
+					ctx.ui.notify(
+						`Agent Plugins: ${pending.length} plugin(s) need trust approval. Run /plugin trust <name> to allow MCP servers.`,
+						"info",
+					);
+				}
+			}
 		} finally {
 			if (ctx.hasUI) ctx.ui.setWorkingMessage();
 			console.error("[Agent Plugins] session_start complete");
@@ -68,30 +75,3 @@ export default function agentPlugins(pi: ExtensionAPI): void {
 	});
 }
 
-async function promptForTrust(
-	runtime: PluginRuntime,
-	ctx: ExtensionContext,
-): Promise<void> {
-	if (!ctx.hasUI) return;
-	const pending = runtime.pendingTrust();
-	if (pending.length === 0) return;
-
-	const approved: string[] = [];
-	for (const plugin of pending) {
-		const servers = plugin.mcpServers.map((server) => server.name).join(", ");
-		const accepted = await ctx.ui.confirm(
-			`Trust plugin "${plugin.manifest.name}"?`,
-			`It declares MCP server(s): ${servers}. Trusting lets them run with your permissions.`,
-		);
-		if (accepted) approved.push(plugin.manifest.name);
-	}
-	if (approved.length === 0) return;
-
-	const { changed } = runtime.trustMany(approved);
-	if (changed) {
-		ctx.ui.notify(
-			"Agent Plugins: MCP servers configured. Run /plugin reload to connect them.",
-			"info",
-		);
-	}
-}
