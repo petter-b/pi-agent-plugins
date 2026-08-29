@@ -7,6 +7,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 
 import { install, parseSource, uninstall } from "./install.ts";
+import { withPluginLoadingFeedback } from "./plugin-loading-feedback.ts";
 import { projectPluginsDir, userPluginsDir } from "./paths-client.ts";
 import { formatDiagnostic, formatInfo, formatList } from "./report.ts";
 import type { PluginRuntime } from "./runtime.ts";
@@ -58,16 +59,14 @@ export function registerPluginCommand(
 				);
 				return;
 			}
-			if (ctx.hasUI) {
-				ctx.ui.setWorkingVisible(true);
-				ctx.ui.setWorkingMessage("Loading Agent Plugins...");
-			}
-			try {
-				runtime.scan(ctx.cwd, ctx.isProjectTrusted());
-				await handler(rest.join(" "), ctx);
-			} finally {
-				if (ctx.hasUI) ctx.ui.setWorkingMessage();
-			}
+			await withPluginLoadingFeedback(
+				ctx,
+				"Loading Agent Plugins...",
+				async () => {
+					runtime.scan(ctx.cwd, ctx.isProjectTrusted());
+					await handler(rest.join(" "), ctx);
+				},
+			);
 		},
 	});
 }
@@ -159,10 +158,6 @@ async function handleInstall(
 	}
 
 	try {
-		if (ctx.hasUI) {
-			ctx.ui.setWorkingVisible(true);
-			ctx.ui.setWorkingMessage("Installing plugin...");
-		}
 		const options = ctx.signal ? { signal: ctx.signal } : {};
 		const result = await install(source, options);
 		runtime.scan();
@@ -175,8 +170,6 @@ async function handleInstall(
 		if (plugin) show(pi, ctx, formatInfo(plugin, runtime.registry.trusted));
 	} catch (cause) {
 		fail(ctx, cause instanceof Error ? cause.message : String(cause));
-	} finally {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage();
 	}
 }
 
@@ -195,23 +188,15 @@ async function handleUninstall(
 		return;
 	}
 
-	if (ctx.hasUI) {
-		ctx.ui.setWorkingVisible(true);
-		ctx.ui.setWorkingMessage("Uninstalling plugin...");
-	}
-	try {
-		const removed = uninstall(plugin.manifest.name);
-		runtime.scan();
-		runtime.sync();
-		ctx.ui.notify(
-			removed
-				? `Removed ${plugin.manifest.name}. Its PLUGIN_DATA was preserved.`
-				: `Nothing to remove for ${plugin.manifest.name}.`,
-			removed ? "info" : "warning",
-		);
-	} finally {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage();
-	}
+	const removed = uninstall(plugin.manifest.name);
+	runtime.scan();
+	runtime.sync();
+	ctx.ui.notify(
+		removed
+			? `Removed ${plugin.manifest.name}. Its PLUGIN_DATA was preserved.`
+			: `Nothing to remove for ${plugin.manifest.name}.`,
+		removed ? "info" : "warning",
+	);
 }
 
 async function handleEnable(
@@ -248,26 +233,18 @@ async function handleReload(
 	runtime: PluginRuntime,
 	ctx: ExtensionCommandContext,
 ): Promise<void> {
-	if (ctx.hasUI) {
-		ctx.ui.setWorkingVisible(true);
-		ctx.ui.setWorkingMessage("Loading Agent Plugins...");
-	}
-	try {
-		const { diagnostics } = runtime.sync();
-		const errors = diagnostics.filter(
-			(diagnostic) => diagnostic.severity === "error",
+	const { diagnostics } = runtime.sync();
+	const errors = diagnostics.filter(
+		(diagnostic) => diagnostic.severity === "error",
+	);
+	if (errors.length > 0) {
+		ctx.ui.notify(
+			`Agent Plugins: cannot reload; ${errors.length} MCP sync error(s).`,
+			"error",
 		);
-		if (errors.length > 0) {
-			ctx.ui.notify(
-				`Agent Plugins: cannot reload; ${errors.length} MCP sync error(s).`,
-				"error",
-			);
-			return;
-		}
-		await ctx.reload();
-	} finally {
-		if (ctx.hasUI) ctx.ui.setWorkingMessage();
+		return;
 	}
+	await ctx.reload();
 }
 
 function formatDoctor(runtime: PluginRuntime): string {
